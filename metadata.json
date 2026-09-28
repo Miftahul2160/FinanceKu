@@ -1,0 +1,6 @@
+{
+  "name": "FinanceKu",
+  "description": "Aplikasi pencatatan keuangan pribadi multi-akun dengan saldo real-time, transaksi pemasukan/pengeluaran, kategori, dan rekap keuangan.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
