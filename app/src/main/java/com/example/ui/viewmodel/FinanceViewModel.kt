@@ -44,8 +44,15 @@ data class MonthRecap(
 
 class FinanceViewModel(
   private val authRepository: AuthRepository,
-  private val financeRepository: FinanceRepository
+  private val financeRepository: FinanceRepository,
+  private val sessionManager: com.example.data.session.SessionManager
 ) : ViewModel() {
+
+  val themeMode: StateFlow<String> = sessionManager.themeMode
+
+  fun setThemeMode(mode: String) {
+    sessionManager.setThemeMode(mode)
+  }
 
   val currentUser: StateFlow<UserEntity?> = authRepository.getCurrentUserFlow()
     .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
@@ -296,11 +303,12 @@ class FinanceViewModel(
   companion object {
     fun provideFactory(
       authRepository: AuthRepository,
-      financeRepository: FinanceRepository
+      financeRepository: FinanceRepository,
+      sessionManager: com.example.data.session.SessionManager
     ): ViewModelProvider.Factory = object : ViewModelProvider.Factory {
       @Suppress("UNCHECKED_CAST")
       override fun <T : ViewModel> create(modelClass: Class<T>): T {
-        return FinanceViewModel(authRepository, financeRepository) as T
+        return FinanceViewModel(authRepository, financeRepository, sessionManager) as T
       }
     }
   }

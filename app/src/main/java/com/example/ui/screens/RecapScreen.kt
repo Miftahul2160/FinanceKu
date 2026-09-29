@@ -19,8 +19,11 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.DateRange
+import androidx.compose.material.icons.filled.FileDownload
 import androidx.compose.material.icons.filled.TrendingDown
 import androidx.compose.material.icons.filled.TrendingUp
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.DropdownMenuItem
@@ -29,6 +32,7 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
@@ -47,11 +51,13 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.ui.components.CategoryIcon
+import com.example.ui.components.ExportReportDialog
 import com.example.ui.theme.ExpenseRed
 import com.example.ui.theme.ExpenseRedContainer
 import com.example.ui.theme.IncomeGreen
@@ -60,6 +66,7 @@ import com.example.ui.viewmodel.CategorySummaryItem
 import com.example.ui.viewmodel.FinanceViewModel
 import com.example.util.CurrencyUtils
 import com.example.util.DateUtils
+import com.example.util.ReportExporter
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -67,10 +74,13 @@ fun RecapScreen(
   viewModel: FinanceViewModel
 ) {
   val recap by viewModel.monthlyRecap.collectAsStateWithLifecycle()
+  val context = LocalContext.current
+  val currentUser by viewModel.currentUser.collectAsStateWithLifecycle()
   val allTransactions by viewModel.allTransactions.collectAsStateWithLifecycle()
   val selectedMonthKey by viewModel.selectedRecapMonth.collectAsStateWithLifecycle()
 
   var isDropdownExpanded by remember { mutableStateOf(false) }
+  var showExportDialog by remember { mutableStateOf(false) }
   var categoryTab by remember { mutableIntStateOf(0) } // 0: Pengeluaran, 1: Pemasukan
 
   // Available months list derived from transactions + current month
@@ -78,6 +88,44 @@ fun RecapScreen(
     val months = allTransactions.map { DateUtils.getYearMonthKey(it.transactionDate) }.toMutableSet()
     months.add(DateUtils.getCurrentYearMonthKey())
     months.toList().sortedDescending()
+  }
+
+  val periodTransactions = remember(allTransactions, selectedMonthKey) {
+    if (selectedMonthKey == "ALL") allTransactions
+    else allTransactions.filter { it.transactionDate.startsWith(selectedMonthKey) }
+  }
+
+  if (showExportDialog) {
+    ExportReportDialog(
+      monthName = recap.monthName,
+      onDismiss = { showExportDialog = false },
+      onExportPdf = {
+        try {
+          val pdfFile = ReportExporter.exportToPdf(
+            context = context,
+            recap = recap,
+            transactions = periodTransactions,
+            userName = currentUser?.name ?: "Pengguna"
+          )
+          ReportExporter.shareFile(context, pdfFile, "application/pdf", "Laporan Rekap Keuangan - ${recap.monthName}")
+        } catch (e: Exception) {
+          e.printStackTrace()
+        }
+      },
+      onExportExcel = {
+        try {
+          val csvFile = ReportExporter.exportToExcelCsv(
+            context = context,
+            recap = recap,
+            transactions = periodTransactions,
+            userName = currentUser?.name ?: "Pengguna"
+          )
+          ReportExporter.shareFile(context, csvFile, "text/csv", "Laporan Rekap Keuangan Excel/CSV - ${recap.monthName}")
+        } catch (e: Exception) {
+          e.printStackTrace()
+        }
+      }
+    )
   }
 
   Scaffold(
@@ -88,6 +136,18 @@ fun RecapScreen(
             text = "Rekap Keuangan",
             fontWeight = FontWeight.Bold
           )
+        },
+        actions = {
+          IconButton(
+            onClick = { showExportDialog = true },
+            modifier = Modifier.testTag("export_recap_action_button")
+          ) {
+            Icon(
+              imageVector = Icons.Default.FileDownload,
+              contentDescription = "Export Rekap",
+              tint = MaterialTheme.colorScheme.primary
+            )
+          }
         }
       )
     },
@@ -142,6 +202,23 @@ fun RecapScreen(
               )
             }
           }
+        }
+      }
+
+      // Export Button Card
+      item {
+        Button(
+          onClick = { showExportDialog = true },
+          shape = RoundedCornerShape(14.dp),
+          colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
+          modifier = Modifier
+            .fillMaxWidth()
+            .height(48.dp)
+            .testTag("btn_export_recap_full")
+        ) {
+          Icon(Icons.Default.FileDownload, contentDescription = null, modifier = Modifier.size(20.dp))
+          Spacer(modifier = Modifier.width(8.dp))
+          Text("Export Laporan (${recap.monthName}) ke PDF / Excel", fontWeight = FontWeight.Bold)
         }
       }
 

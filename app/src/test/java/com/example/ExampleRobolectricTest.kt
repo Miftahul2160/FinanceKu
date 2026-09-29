@@ -260,4 +260,56 @@ class ExampleRobolectricTest {
     assertEquals("Rp 0", CurrencyUtils.formatRupiah(0L))
     assertEquals("- Rp 500.000", CurrencyUtils.formatRupiah(-500_000L))
   }
+
+  @Test
+  fun testThemeModePersistence() {
+    sessionManager.setThemeMode("DARK")
+    assertEquals("DARK", sessionManager.themeMode.value)
+
+    sessionManager.setThemeMode("LIGHT")
+    assertEquals("LIGHT", sessionManager.themeMode.value)
+
+    sessionManager.setThemeMode("SYSTEM")
+    assertEquals("SYSTEM", sessionManager.themeMode.value)
+  }
+
+  @Test
+  fun testPdfAndExcelExportGeneration() {
+    val recap = com.example.ui.viewmodel.MonthRecap(
+      monthKey = "2026-09",
+      monthName = "September 2026",
+      totalIncome = 5_000_000L,
+      totalExpense = 2_000_000L,
+      netAmount = 3_000_000L,
+      openingBalance = 1_000_000L,
+      closingBalance = 4_000_000L,
+      expenseByCategory = emptyList(),
+      incomeByCategory = emptyList()
+    )
+    val transactions = listOf(
+      com.example.data.model.TransactionEntity(
+        id = 1L,
+        userId = 1L,
+        categoryId = 1L,
+        categoryName = "Gaji",
+        type = "INCOME",
+        amount = 5_000_000L,
+        description = "Gaji Pokok",
+        transactionDate = "2026-09-01"
+      )
+    )
+
+    // Test PDF generation
+    val pdfFile = com.example.util.ReportExporter.exportToPdf(context, recap, transactions, "Tester")
+    assertTrue(pdfFile.exists())
+    assertTrue(pdfFile.length() > 0)
+
+    // Test Excel / CSV generation
+    val csvFile = com.example.util.ReportExporter.exportToExcelCsv(context, recap, transactions, "Tester")
+    assertTrue(csvFile.exists())
+    assertTrue(csvFile.length() > 0)
+    val content = csvFile.readText()
+    assertTrue(content.contains("FINANCEKU - LAPORAN REKAP KEUANGAN"))
+    assertTrue(content.contains("5000000"))
+  }
 }

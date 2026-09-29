@@ -76,7 +76,7 @@ private fun AuthenticatedContent(
   onLoggedOut: () -> Unit
 ) {
   val financeViewModel = remember(container.sessionManager.currentUserId.value) {
-    FinanceViewModel(container.authRepository, container.financeRepository)
+    FinanceViewModel(container.authRepository, container.financeRepository, container.sessionManager)
   }
 
   val snackbarHostState = remember { SnackbarHostState() }

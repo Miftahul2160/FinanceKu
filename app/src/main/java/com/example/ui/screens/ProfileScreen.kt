@@ -21,6 +21,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowForwardIos
 import androidx.compose.material.icons.filled.AccountBalanceWallet
 import androidx.compose.material.icons.filled.Category
+import androidx.compose.material.icons.filled.DarkMode
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.Logout
@@ -56,6 +57,7 @@ import com.example.ui.components.AddCategoryDialog
 import com.example.ui.components.ChangePasswordDialog
 import com.example.ui.components.EditProfileDialog
 import com.example.ui.components.OpeningBalanceDialog
+import com.example.ui.components.ThemeSelectionDialog
 import com.example.ui.theme.ExpenseRed
 import com.example.ui.viewmodel.FinanceViewModel
 import com.example.util.CurrencyUtils
@@ -70,12 +72,24 @@ fun ProfileScreen(
   onLoggedOut: () -> Unit
 ) {
   val currentUser by viewModel.currentUser.collectAsStateWithLifecycle()
+  val currentThemeMode by viewModel.themeMode.collectAsStateWithLifecycle()
 
   var showEditProfileDialog by remember { mutableStateOf(false) }
   var showChangePasswordDialog by remember { mutableStateOf(false) }
   var showOpeningBalanceDialog by remember { mutableStateOf(false) }
   var showAddCategoryDialog by remember { mutableStateOf(false) }
+  var showThemeDialog by remember { mutableStateOf(false) }
   var showLogoutConfirmDialog by remember { mutableStateOf(false) }
+
+  if (showThemeDialog) {
+    ThemeSelectionDialog(
+      currentMode = currentThemeMode,
+      onDismiss = { showThemeDialog = false },
+      onSelectMode = { mode ->
+        viewModel.setThemeMode(mode)
+      }
+    )
+  }
 
   if (showEditProfileDialog) {
     EditProfileDialog(
@@ -276,6 +290,19 @@ fun ProfileScreen(
               subtitle = "Buat kategori transaksi sendiri",
               onClick = { showAddCategoryDialog = true },
               tag = "menu_add_category"
+            )
+
+            val themeSubtitle = when (currentThemeMode) {
+              "LIGHT" -> "Terang (Cerah)"
+              "DARK" -> "Gelap (Malam)"
+              else -> "Ikuti Sistem HP"
+            }
+            ProfileMenuItem(
+              icon = Icons.Default.DarkMode,
+              title = "Tema Tampilan",
+              subtitle = themeSubtitle,
+              onClick = { showThemeDialog = true },
+              tag = "menu_theme_mode"
             )
 
             ProfileMenuItem(

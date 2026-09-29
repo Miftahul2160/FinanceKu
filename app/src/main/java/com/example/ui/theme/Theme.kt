@@ -60,9 +60,15 @@ private val DarkColorScheme = darkColorScheme(
 
 @Composable
 fun FinanceKuTheme(
-  darkTheme: Boolean = isSystemInDarkTheme(),
+  themeMode: String = "SYSTEM",
   content: @Composable () -> Unit
 ) {
+  val systemDark = isSystemInDarkTheme()
+  val darkTheme = when (themeMode) {
+    "LIGHT" -> false
+    "DARK" -> true
+    else -> systemDark
+  }
   val colorScheme = if (darkTheme) DarkColorScheme else LightColorScheme
 
   MaterialTheme(
